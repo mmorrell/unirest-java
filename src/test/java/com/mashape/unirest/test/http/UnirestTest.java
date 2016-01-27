@@ -126,7 +126,7 @@ public class UnirestTest {
 
 	@Test
 	public void testPostRawBody() throws UnirestException, URISyntaxException, IOException {
-		String sourceString = "'\"@こんにちは-test-123-" + Math.random();
+		String sourceString = "'\"test-123-" + Math.random();
 		byte[] sentBytes = sourceString.getBytes();
 
 		HttpResponse<JsonNode> response = Unirest.post("http://httpbin.org/post").body(sentBytes).asJson();

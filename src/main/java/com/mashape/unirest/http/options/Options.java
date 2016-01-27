@@ -4,7 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
@@ -66,6 +70,18 @@ public class Options {
 		// Load proxy if set
 		HttpHost proxy = (HttpHost) Options.getOption(Option.PROXY);
 
+		// Proxy Auth, if set.
+		CredentialsProvider credProviders = new BasicCredentialsProvider();
+		if (getOption(Option.PROXY_USERNAME) != null && getOption(Option.PROXY_PASSWORD) != null) {
+			String proxyUsername = (String) Options.getOption(Option.PROXY_USERNAME);
+			String proxyPassword = (String) Options.getOption(Option.PROXY_PASSWORD);
+			String proxyHost = ((HttpHost) Options.getOption(Option.PROXY)).getHostName();
+			int proxyPort = ((HttpHost) Options.getOption(Option.PROXY)).getPort();
+			credProviders.setCredentials(
+				new AuthScope(proxyHost, proxyPort),
+				new UsernamePasswordCredentials(proxyUsername, proxyPassword));
+		}
+
 		// Create common default configuration
 		RequestConfig clientConfig = RequestConfig.custom().setConnectTimeout(((Long) connectionTimeout).intValue()).setSocketTimeout(((Long) socketTimeout).intValue()).setConnectionRequestTimeout(((Long) socketTimeout).intValue()).setProxy(proxy).build();
 
@@ -90,7 +106,7 @@ public class Options {
 			throw new RuntimeException(e);
 		}
 
-		CloseableHttpAsyncClient asyncClient = HttpAsyncClientBuilder.create().setDefaultRequestConfig(clientConfig).setConnectionManager(asyncConnectionManager).build();
+		CloseableHttpAsyncClient asyncClient = HttpAsyncClientBuilder.create().setDefaultRequestConfig(clientConfig).setConnectionManager(asyncConnectionManager).setDefaultCredentialsProvider(credProviders).build();
 		setOption(Option.ASYNCHTTPCLIENT, asyncClient);
 		setOption(Option.ASYNC_MONITOR, new AsyncIdleConnectionMonitorThread(asyncConnectionManager));
 	}
